@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+import cgi
+import requests
+import time
+
+# Перемещаем ожидание после чтения параметров из формы
+form = cgi.FieldStorage()
+
+url = "https://api.openweathermap.org/data/2.5/weather"
+appid = "b1d4b2cfb62107065d96dc99e50c1297"
+lang = "ru"
+units = form.getfirst("units", "metric")  # Используйте "metric" по умолчанию, если параметр "units" не указан
+q = form.getfirst("city", "")  # Пустая строка по умолчанию, если параметр "city" не указан
+
+# Проверяем, были ли переданы оба параметра (units и city)
+if not units or not q:
+    print("Content-type: text/html")
+    print()
+    print("<html><head><title>Ошибка</title></head><body><h1>Ошибка: Необходимо указать единицы измерения и город.</h1></body></html>")
+else:
+    params = {"q": q,
+              "appid": appid,
+              "lang": lang,
+              "units": units}
+    r = requests.get(url=url, params=params)
+    
+    # Проверяем, успешен ли запрос к API OpenWeatherMap
+    if r.status_code == 200:
+        des = r.json()["weather"][0]["description"]
+        temp = r.json()["main"]["temp"]
+        
+        print("Content-type: text/html")
+        print()
+        print(f'''<!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="utf-8">
+        <title>Текущая погода в городе {q}</title>
+        </head>
+        <body>
+        <h1>Текущая погода в городе {q}</h1>
+        <p>Температура: {temp} {units}</p>
+        <p>Описание: {des}</p>
+        </body>
+        </html>''')
+    else:
+        print("Content-type: text/html")
+        print()
+        print(f"<html><head><title>Ошибка</title></head><body><h1>Ошибка при запросе к API OpenWeatherMap. Код ошибки: {r.status_code}</h1></body></html>")
